@@ -34,7 +34,6 @@ seq2seq-transformer/
 |   +-- 03_evaluate_model.ipynb
 +-- data/                      # Generated SentencePiece artifacts
 +-- checkpoints/               # Generated model checkpoints
-+-- requirements.txt
 +-- pyproject.toml
 +-- .env
 +-- .gitignore
@@ -53,12 +52,6 @@ Install from `pyproject.toml`:
 
 ```bash
 pip install ".[notebooks]"
-```
-
-Or install from `requirements.txt`:
-
-```bash
-pip install -r requirements.txt
 ```
 
 For CUDA, install the PyTorch build that matches your CUDA version.
@@ -122,6 +115,19 @@ Translate with another checkpoint:
 python -m src.main --mode translate --text "I like machine learning." --checkpoint checkpoints/latest.pt
 ```
 
+Run a W&B tracked training and evaluation experiment:
+
+```bash
+wandb login
+python -m src.wandb_experiment --project seq2seq-transformer --run-name baseline
+```
+
+Use offline mode when you want to log locally first:
+
+```bash
+python -m src.wandb_experiment --offline --run-name baseline
+```
+
 ## Notebook Workflow
 
 Run notebooks in this order:
@@ -140,6 +146,10 @@ Run notebooks in this order:
    - Load `checkpoints/best.pt`
    - Evaluate on the test split
    - Compute BLEU and chrF with `src.metrics`
+
+4. `notebooks/04_train_and_evaluate_wandb.ipynb`
+   - Run train and evaluation in one notebook
+   - Log losses, BLEU, chrF, sample translations, and checkpoint artifacts to W&B
 
 ## Generated Artifacts
 
