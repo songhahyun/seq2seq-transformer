@@ -1,3 +1,37 @@
-.venv/
-__pycache__/
+#Python cache
+**/__pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+#virtual env
+venv/
+.env/
+.venv/
+.env
+
+#Hydra outputs
+outputs/
+multirun/
+
+#logs
+logs/
+*.log
+
+#checkpoints / model weights
+checkpoints/
+*.pt
+.pth
+
+#system files
+.DS_Store
+Thumbs.db
+
+#editor
+.vscode/
+
+#notebook cache
+.ipynb_checkpoints/ 
+
+#data
+data/

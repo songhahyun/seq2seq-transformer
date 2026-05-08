@@ -63,6 +63,10 @@ def train_sentencepiece(
     vocab_size: int,
     character_coverage: float,
 ):
+    output_dir = os.path.dirname(model_prefix)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
     spm.SentencePieceTrainer.train(
         input=input_file,
         model_prefix=model_prefix,
@@ -89,7 +93,7 @@ def prepare_tokenizers(train_pairs, config):
         write_texts_for_spm(src_texts, src_tmp)
         write_texts_for_spm(tgt_texts, tgt_tmp)
 
-        if not os.path.exists(f"{config.sp_model_prefix_src}.model"):
+        if not os.path.exists(config.sp_model_path_src):
             train_sentencepiece(
                 input_file=src_tmp,
                 model_prefix=config.sp_model_prefix_src,
@@ -97,7 +101,7 @@ def prepare_tokenizers(train_pairs, config):
                 character_coverage=config.character_coverage_ko,
             )
 
-        if not os.path.exists(f"{config.sp_model_prefix_tgt}.model"):
+        if not os.path.exists(config.sp_model_path_tgt):
             train_sentencepiece(
                 input_file=tgt_tmp,
                 model_prefix=config.sp_model_prefix_tgt,
@@ -112,8 +116,8 @@ def prepare_tokenizers(train_pairs, config):
 
     sp_src = spm.SentencePieceProcessor()
     sp_tgt = spm.SentencePieceProcessor()
-    sp_src.load(f"{config.sp_model_prefix_src}.model")
-    sp_tgt.load(f"{config.sp_model_prefix_tgt}.model")
+    sp_src.load(config.sp_model_path_src)
+    sp_tgt.load(config.sp_model_path_tgt)
 
     return sp_src, sp_tgt
 

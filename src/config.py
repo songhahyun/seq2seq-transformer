@@ -18,8 +18,8 @@ class Config:
     random_seed: int = 42
 
     # tokenizer
-    sp_model_prefix_src: str = "spm_ko"
-    sp_model_prefix_tgt: str = "spm_en"
+    sp_model_prefix_src: str = "data/spm_ko"
+    sp_model_prefix_tgt: str = "data/spm_en"
     src_vocab_size: int = 8000
     tgt_vocab_size: int = 8000
     character_coverage_ko: float = 0.9995
@@ -40,6 +40,7 @@ class Config:
     batch_size: int = 16 # 32
     num_epochs: int = 1
     lr: float = 1e-4
+    checkpoint_dir: str = "checkpoints"
 
     # decoding
     max_decode_len: int = 128
@@ -60,3 +61,19 @@ class Config:
 
     # device
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
+
+    @property
+    def sp_model_path_src(self) -> str:
+        return f"{self.sp_model_prefix_src}.model"
+
+    @property
+    def sp_vocab_path_src(self) -> str:
+        return f"{self.sp_model_prefix_src}.vocab"
+
+    @property
+    def sp_model_path_tgt(self) -> str:
+        return f"{self.sp_model_prefix_tgt}.model"
+
+    @property
+    def sp_vocab_path_tgt(self) -> str:
+        return f"{self.sp_model_prefix_tgt}.vocab"

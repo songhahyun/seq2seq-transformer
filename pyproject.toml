@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seq2seq-transformer"
+version = "0.1.0"
+description = "Korean-to-English seq2seq Transformer training and evaluation project."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.2",
+    "datasets>=2.19",
+    "sentencepiece>=0.2.0",
+    "sacrebleu>=2.4",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+notebooks = [
+    "ipykernel>=6.29",
+    "notebook>=7.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["src*"]
