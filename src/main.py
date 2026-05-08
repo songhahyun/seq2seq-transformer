@@ -26,6 +26,18 @@ def parse_args():
         default=None,
         help="Checkpoint path. Defaults to checkpoints/best.pt when available.",
     )
+    parser.add_argument(
+        "--decode-strategy",
+        choices=["greedy", "beam"],
+        default=None,
+        help="Decoding strategy for evaluate/translate. Defaults to config value.",
+    )
+    parser.add_argument(
+        "--beam-size",
+        type=int,
+        default=None,
+        help="Beam size when --decode-strategy beam is used. Defaults to config value.",
+    )
     return parser.parse_args()
 
 
@@ -33,6 +45,10 @@ def main():
     args = parse_args()
     config = Config()
     set_seed(config.random_seed)
+    if args.decode_strategy is not None:
+        config.decode_strategy = args.decode_strategy
+    if args.beam_size is not None:
+        config.beam_size = args.beam_size
 
     print(f"[INFO] device = {config.device}")
 

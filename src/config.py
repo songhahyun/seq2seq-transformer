@@ -44,6 +44,8 @@ class Config:
 
     # decoding
     max_decode_len: int = 128
+    decode_strategy: str = "greedy"
+    beam_size: int = 5
 
     # special token ids for sentencepiece defaults
     # SentencePiece trainer spec:

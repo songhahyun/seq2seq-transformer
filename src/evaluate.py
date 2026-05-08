@@ -30,11 +30,13 @@ def generate_predictions(model, dataloader, sp_tgt, config, device):
         tgt_texts = batch["tgt_texts"]
         src_text_batch = batch["src_texts"]
 
-        pred_ids = model.greedy_decode(
+        pred_ids = model.decode(
             src=src_ids,
             bos_id=config.bos_id,
             eos_id=config.eos_id,
             max_len=config.max_decode_len,
+            strategy=config.decode_strategy,
+            beam_size=config.beam_size,
         )
 
         pred_ids = pred_ids.cpu().tolist()

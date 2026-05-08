@@ -121,3 +121,108 @@ class Seq2SeqTransformer(nn.Module):
                 break
 
         return generated
+
+    @torch.no_grad()
+    def beam_decode(
+        self,
+        src,
+        bos_id: int,
+        eos_id: int,
+        max_len: int,
+        beam_size: int = 5,
+    ):
+        if beam_size < 1:
+            raise ValueError("beam_size must be greater than or equal to 1")
+        if beam_size == 1:
+            return self.greedy_decode(src, bos_id, eos_id, max_len)
+
+        self.eval()
+        decoded = [
+            self._beam_decode_single(
+                src=src[i : i + 1],
+                bos_id=bos_id,
+                eos_id=eos_id,
+                max_len=max_len,
+                beam_size=beam_size,
+            )
+            for i in range(src.size(0))
+        ]
+
+        max_decoded_len = max(seq.size(0) for seq in decoded)
+        padded = torch.full(
+            (len(decoded), max_decoded_len),
+            self.pad_id,
+            dtype=torch.long,
+            device=src.device,
+        )
+        for i, seq in enumerate(decoded):
+            padded[i, : seq.size(0)] = seq
+        return padded
+
+    def _beam_decode_single(
+        self,
+        src,
+        bos_id: int,
+        eos_id: int,
+        max_len: int,
+        beam_size: int,
+    ):
+        device = src.device
+        beams = torch.full((1, 1), bos_id, dtype=torch.long, device=device)
+        beam_scores = torch.zeros(1, dtype=torch.float32, device=device)
+
+        for _ in range(max_len - 1):
+            finished = (beams == eos_id).any(dim=1)
+            if finished.all():
+                break
+
+            src_beams = src.expand(beams.size(0), -1)
+            logits = self.forward(src_beams, beams)
+            log_probs = torch.log_softmax(logits[:, -1, :], dim=-1)
+
+            candidate_sequences = []
+            candidate_scores = []
+            for beam_idx in range(beams.size(0)):
+                if finished[beam_idx]:
+                    next_seq = torch.cat(
+                        [
+                            beams[beam_idx],
+                            torch.tensor([self.pad_id], dtype=torch.long, device=device),
+                        ]
+                    )
+                    candidate_sequences.append(next_seq)
+                    candidate_scores.append(beam_scores[beam_idx])
+                    continue
+
+                top_scores, top_tokens = torch.topk(log_probs[beam_idx], beam_size)
+                for token_score, token_id in zip(top_scores, top_tokens):
+                    next_seq = torch.cat([beams[beam_idx], token_id.view(1)])
+                    candidate_sequences.append(next_seq)
+                    candidate_scores.append(beam_scores[beam_idx] + token_score)
+
+            candidate_scores = torch.stack(candidate_scores)
+            candidate_sequences = torch.stack(candidate_sequences)
+            best_scores, best_indices = torch.topk(
+                candidate_scores,
+                k=min(beam_size, candidate_scores.size(0)),
+            )
+            beams = candidate_sequences[best_indices]
+            beam_scores = best_scores
+
+        return beams[0]
+
+    @torch.no_grad()
+    def decode(
+        self,
+        src,
+        bos_id: int,
+        eos_id: int,
+        max_len: int,
+        strategy: str = "greedy",
+        beam_size: int = 5,
+    ):
+        if strategy == "greedy":
+            return self.greedy_decode(src, bos_id, eos_id, max_len)
+        if strategy == "beam":
+            return self.beam_decode(src, bos_id, eos_id, max_len, beam_size=beam_size)
+        raise ValueError(f"unsupported decode strategy: {strategy}")

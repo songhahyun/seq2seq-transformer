@@ -67,6 +67,10 @@ def run_wandb_experiment(args):
     wandb = import_wandb()
     config = Config()
     set_seed(config.random_seed)
+    if args.decode_strategy is not None:
+        config.decode_strategy = args.decode_strategy
+    if args.beam_size is not None:
+        config.beam_size = args.beam_size
 
     if args.offline:
         os.environ["WANDB_MODE"] = "offline"
@@ -290,6 +294,18 @@ def parse_args():
         type=int,
         default=100,
         help="Logging frequency for wandb.watch.",
+    )
+    parser.add_argument(
+        "--decode-strategy",
+        choices=["greedy", "beam"],
+        default=None,
+        help="Decoding strategy for test evaluation. Defaults to config value.",
+    )
+    parser.add_argument(
+        "--beam-size",
+        type=int,
+        default=None,
+        help="Beam size when --decode-strategy beam is used. Defaults to config value.",
     )
     return parser.parse_args()
 
