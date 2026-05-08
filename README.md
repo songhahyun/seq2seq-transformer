@@ -62,9 +62,13 @@ Create a `.env` file in the repository root:
 
 ```env
 HF_TOKEN=your_huggingface_token
+WANDB_API_KEY=your_wandb_api_key
+WANDB_MODE=online
 ```
 
 `HF_TOKEN` is loaded in `src/config.py` and passed to `datasets.load_dataset()`. It may be optional if the dataset is public in your environment.
+
+Use [.env.example](.env.example) as a template.
 
 ## Dataset
 
