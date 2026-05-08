@@ -8,6 +8,7 @@ from src.translate import run_translate
 
 
 def parse_args():
+    """Parse command-line arguments for train, evaluate, and translate modes."""
     parser = argparse.ArgumentParser(description="Train, evaluate, or translate.")
     parser.add_argument(
         "--mode",
@@ -42,6 +43,7 @@ def parse_args():
 
 
 def main():
+    """Apply CLI overrides and dispatch to the selected execution mode."""
     args = parse_args()
     config = Config()
     set_seed(config.random_seed)

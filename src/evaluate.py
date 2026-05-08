@@ -19,6 +19,7 @@ from src.model_utils import (
 
 @torch.no_grad()
 def generate_predictions(model, dataloader, sp_tgt, config, device):
+    """Generate decoded predictions, references, and source texts for a dataloader."""
     model.eval()
 
     predictions = []
@@ -60,6 +61,7 @@ def generate_predictions(model, dataloader, sp_tgt, config, device):
 
 
 def print_sample_translations(source_texts, predictions, references, n=10):
+    """Print a small aligned sample of source, reference, and prediction text."""
     print("\n" + "=" * 80)
     print(f"[Sample Translations: {n}]")
     print("=" * 80)
@@ -73,6 +75,7 @@ def print_sample_translations(source_texts, predictions, references, n=10):
 
 
 def run_evaluate(config, checkpoint_path: str | None = None):
+    """Load a checkpoint, evaluate on the test split, and report metrics."""
     sp_src, sp_tgt = load_tokenizers(config)
     resolved_checkpoint_path = resolve_checkpoint_path(config, checkpoint_path)
 

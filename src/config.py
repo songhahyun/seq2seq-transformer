@@ -8,6 +8,8 @@ import torch
 
 @dataclass
 class Config:
+    """Central configuration for data, model, training, decoding, and runtime paths."""
+
     # dataset
     dataset_name: str = "shihyunlim/aihub-ko-en-everyday-expression"
     hf_token: str | None = os.getenv("HF_TOKEN")
@@ -66,16 +68,20 @@ class Config:
 
     @property
     def sp_model_path_src(self) -> str:
+        """Return the source SentencePiece model file path."""
         return f"{self.sp_model_prefix_src}.model"
 
     @property
     def sp_vocab_path_src(self) -> str:
+        """Return the source SentencePiece vocabulary file path."""
         return f"{self.sp_model_prefix_src}.vocab"
 
     @property
     def sp_model_path_tgt(self) -> str:
+        """Return the target SentencePiece model file path."""
         return f"{self.sp_model_prefix_tgt}.model"
 
     @property
     def sp_vocab_path_tgt(self) -> str:
+        """Return the target SentencePiece vocabulary file path."""
         return f"{self.sp_model_prefix_tgt}.vocab"

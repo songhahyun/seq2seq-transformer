@@ -25,6 +25,7 @@ from src.train import (
 
 
 def import_wandb():
+    """Import wandb lazily and raise an install hint when it is missing."""
     try:
         import wandb
     except ImportError as exc:
@@ -35,6 +36,7 @@ def import_wandb():
 
 
 def config_for_wandb(config):
+    """Convert runtime config into a W&B-friendly dictionary."""
     config_dict = {
         key: value
         for key, value in vars(config).items()
@@ -52,6 +54,7 @@ def config_for_wandb(config):
 
 
 def log_checkpoint_artifacts(wandb, config, run_name: str | None):
+    """Upload available best and latest checkpoints as a W&B artifact."""
     artifact_name = run_name or "seq2seq-transformer-checkpoints"
     artifact = wandb.Artifact(artifact_name, type="model")
 
@@ -64,6 +67,7 @@ def log_checkpoint_artifacts(wandb, config, run_name: str | None):
 
 
 def run_wandb_experiment(args):
+    """Run training, evaluation, sample logging, and artifact logging with W&B."""
     wandb = import_wandb()
     config = Config()
     set_seed(config.random_seed)
@@ -247,6 +251,7 @@ def run_wandb_experiment(args):
 
 
 def parse_args():
+    """Parse command-line arguments for the W&B experiment runner."""
     parser = argparse.ArgumentParser(description="Run a W&B tracked experiment.")
     parser.add_argument(
         "--project",
@@ -311,6 +316,7 @@ def parse_args():
 
 
 def main():
+    """Parse CLI arguments and start the W&B experiment."""
     args = parse_args()
     run_wandb_experiment(args)
 

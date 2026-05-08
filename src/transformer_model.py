@@ -4,7 +4,10 @@ import torch.nn as nn
 
 
 class PositionalEncoding(nn.Module):
+    """Sinusoidal positional encoding module for transformer token embeddings."""
+
     def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
+        """Precompute sinusoidal positional encodings for token embeddings."""
         super().__init__()
         self.dropout = nn.Dropout(dropout)
 
@@ -21,12 +24,15 @@ class PositionalEncoding(nn.Module):
         self.register_buffer("pe", pe)
 
     def forward(self, x):
+        """Add positional encodings to embedded sequences and apply dropout."""
         # x: [B, T, D]
         x = x + self.pe[:, :x.size(1), :]
         return self.dropout(x)
 
 
 class Seq2SeqTransformer(nn.Module):
+    """Encoder-decoder transformer for sequence-to-sequence translation."""
+
     def __init__(
         self,
         src_vocab_size: int,
@@ -39,6 +45,7 @@ class Seq2SeqTransformer(nn.Module):
         dropout: float,
         pad_id: int,
     ):
+        """Initialize embeddings, positional encoders, transformer, and output head."""
         super().__init__()
         self.d_model = d_model
         self.pad_id = pad_id
@@ -62,17 +69,21 @@ class Seq2SeqTransformer(nn.Module):
         self.output_proj = nn.Linear(d_model, tgt_vocab_size)
 
     def generate_square_subsequent_mask(self, size, device):
+        """Create a causal target mask that blocks attention to future tokens."""
         mask = torch.triu(torch.ones(size, size, device=device), diagonal=1).bool()
         return mask
 
     def make_src_key_padding_mask(self, src):
+        """Build a source padding mask from PAD token positions."""
         # src: [B, T]
         return (src == self.pad_id)
 
     def make_tgt_key_padding_mask(self, tgt):
+        """Build a target padding mask from PAD token positions."""
         return (tgt == self.pad_id)
 
     def forward(self, src, tgt_input):
+        """Run teacher-forced encoder-decoder inference and return token logits."""
         # src: [B, S]
         # tgt_input: [B, T]
         device = src.device
@@ -101,6 +112,7 @@ class Seq2SeqTransformer(nn.Module):
 
     @torch.no_grad()
     def greedy_decode(self, src, bos_id: int, eos_id: int, max_len: int):
+        """Decode each sequence by repeatedly selecting the highest-probability token."""
         self.eval()
         device = src.device
         batch_size = src.size(0)
@@ -131,6 +143,7 @@ class Seq2SeqTransformer(nn.Module):
         max_len: int,
         beam_size: int = 5,
     ):
+        """Decode each source sequence with beam search and pad results as a batch."""
         if beam_size < 1:
             raise ValueError("beam_size must be greater than or equal to 1")
         if beam_size == 1:
@@ -167,6 +180,7 @@ class Seq2SeqTransformer(nn.Module):
         max_len: int,
         beam_size: int,
     ):
+        """Run beam search for one source sequence and return the best token path."""
         device = src.device
         beams = torch.full((1, 1), bos_id, dtype=torch.long, device=device)
         beam_scores = torch.zeros(1, dtype=torch.float32, device=device)
@@ -221,6 +235,7 @@ class Seq2SeqTransformer(nn.Module):
         strategy: str = "greedy",
         beam_size: int = 5,
     ):
+        """Dispatch decoding to greedy search or beam search by strategy name."""
         if strategy == "greedy":
             return self.greedy_decode(src, bos_id, eos_id, max_len)
         if strategy == "beam":

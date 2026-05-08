@@ -10,6 +10,7 @@ from src.model_utils import (
 
 
 def run_translate(config, text: str, checkpoint_path: str | None = None):
+    """Load a trained model and translate one input text string."""
     sp_src, sp_tgt = load_tokenizers(config)
     resolved_checkpoint_path = resolve_checkpoint_path(config, checkpoint_path)
 
