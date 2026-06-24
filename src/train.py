@@ -16,6 +16,7 @@ from src.model_utils import build_model
 
 
 def create_loss_fn(pad_id: int):
+    """Create cross-entropy loss that ignores PAD tokens."""
     return nn.CrossEntropyLoss(ignore_index=pad_id)
 
 
@@ -30,6 +31,7 @@ def save_checkpoint(
     tgt_vocab_size: int,
     path: str,
 ):
+    """Save model, optimizer, metrics, vocabulary sizes, and config state."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
     config_state = {
         key: value
@@ -50,6 +52,7 @@ def save_checkpoint(
 
 
 def shift_tgt_for_teacher_forcing(tgt_ids):
+    """Split target ids into decoder input and next-token labels."""
     # tgt_ids: [B, T]
     tgt_input = tgt_ids[:, :-1]
     tgt_output = tgt_ids[:, 1:]
@@ -57,6 +60,7 @@ def shift_tgt_for_teacher_forcing(tgt_ids):
 
 
 def train_one_epoch(model, dataloader, optimizer, criterion, device):
+    """Train the model for one epoch and return average batch loss."""
     model.train()
     total_loss = 0.0
     total_batches = 0
@@ -86,6 +90,7 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device):
 
 @torch.no_grad()
 def validate_one_epoch(model, dataloader, criterion, device):
+    """Evaluate one validation epoch without gradient updates."""
     model.eval()
     total_loss = 0.0
     total_batches = 0
@@ -110,6 +115,7 @@ def validate_one_epoch(model, dataloader, criterion, device):
 
 
 def run_train(config):
+    """Run the full training pipeline from data loading to checkpointing."""
     print("[INFO] loading dataset...")
     dataset = load_ko_en_dataset(
         config.dataset_name,

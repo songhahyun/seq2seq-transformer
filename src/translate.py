@@ -10,6 +10,7 @@ from src.model_utils import (
 
 
 def run_translate(config, text: str, checkpoint_path: str | None = None):
+    """Load a trained model and translate one input text string."""
     sp_src, sp_tgt = load_tokenizers(config)
     resolved_checkpoint_path = resolve_checkpoint_path(config, checkpoint_path)
 
@@ -27,11 +28,13 @@ def run_translate(config, text: str, checkpoint_path: str | None = None):
     src_tensor = torch.tensor([src_ids], dtype=torch.long, device=config.device)
 
     with torch.no_grad():
-        pred_ids = model.greedy_decode(
+        pred_ids = model.decode(
             src=src_tensor,
             bos_id=config.bos_id,
             eos_id=config.eos_id,
             max_len=config.max_decode_len,
+            strategy=config.decode_strategy,
+            beam_size=config.beam_size,
         )
 
     translation = decode_ids(

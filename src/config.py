@@ -8,6 +8,8 @@ import torch
 
 @dataclass
 class Config:
+    """Central configuration for data, model, training, decoding, and runtime paths."""
+
     # dataset
     dataset_name: str = "shihyunlim/aihub-ko-en-everyday-expression"
     hf_token: str | None = os.getenv("HF_TOKEN")
@@ -37,13 +39,15 @@ class Config:
     dropout: float = 0.1
 
     # training
-    batch_size: int = 16 # 32
-    num_epochs: int = 1
+    batch_size: int = 32
+    num_epochs: int = 16
     lr: float = 1e-4
     checkpoint_dir: str = "checkpoints"
 
     # decoding
     max_decode_len: int = 128
+    decode_strategy: str = "greedy"
+    beam_size: int = 5
 
     # special token ids for sentencepiece defaults
     # SentencePiece trainer spec:
@@ -55,7 +59,7 @@ class Config:
 
     # experiment
     num_examples_for_samples: int = 10
-    train_subset_size: int = 20000  # e.g. 20000 for quick test
+    train_subset_size: int = 200000  # e.g. 20000 for quick test
     valid_subset_size: int = 2000
     test_subset_size: int = 2000
 
@@ -64,16 +68,20 @@ class Config:
 
     @property
     def sp_model_path_src(self) -> str:
+        """Return the source SentencePiece model file path."""
         return f"{self.sp_model_prefix_src}.model"
 
     @property
     def sp_vocab_path_src(self) -> str:
+        """Return the source SentencePiece vocabulary file path."""
         return f"{self.sp_model_prefix_src}.vocab"
 
     @property
     def sp_model_path_tgt(self) -> str:
+        """Return the target SentencePiece model file path."""
         return f"{self.sp_model_prefix_tgt}.model"
 
     @property
     def sp_vocab_path_tgt(self) -> str:
+        """Return the target SentencePiece vocabulary file path."""
         return f"{self.sp_model_prefix_tgt}.vocab"

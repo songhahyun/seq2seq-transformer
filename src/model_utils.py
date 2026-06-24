@@ -7,6 +7,7 @@ from src.transformer_model import Seq2SeqTransformer
 
 
 def build_model(config, src_vocab_size: int, tgt_vocab_size: int):
+    """Instantiate the seq2seq transformer with config hyperparameters."""
     return Seq2SeqTransformer(
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
@@ -21,6 +22,7 @@ def build_model(config, src_vocab_size: int, tgt_vocab_size: int):
 
 
 def load_tokenizers(config):
+    """Load source and target SentencePiece tokenizers from configured paths."""
     if not os.path.exists(config.sp_model_path_src):
         raise FileNotFoundError(f"source tokenizer not found: {config.sp_model_path_src}")
     if not os.path.exists(config.sp_model_path_tgt):
@@ -34,6 +36,7 @@ def load_tokenizers(config):
 
 
 def resolve_checkpoint_path(config, checkpoint_path: str | None = None):
+    """Resolve an explicit, best, or latest checkpoint path in priority order."""
     if checkpoint_path:
         return checkpoint_path
 
@@ -45,12 +48,14 @@ def resolve_checkpoint_path(config, checkpoint_path: str | None = None):
 
 
 def load_checkpoint(checkpoint_path: str, device: str):
+    """Load a checkpoint onto the requested device."""
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
     return torch.load(checkpoint_path, map_location=device)
 
 
 def load_model_from_checkpoint(config, checkpoint, sp_src, sp_tgt):
+    """Build a model, restore checkpoint weights, and switch to eval mode."""
     model = build_model(
         config=config,
         src_vocab_size=checkpoint.get("src_vocab_size", sp_src.get_piece_size()),
