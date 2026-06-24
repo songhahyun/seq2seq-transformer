@@ -39,8 +39,8 @@ class Config:
     dropout: float = 0.1
 
     # training
-    batch_size: int = 16 # 32
-    num_epochs: int = 1
+    batch_size: int = 32
+    num_epochs: int = 10
     lr: float = 1e-4
     checkpoint_dir: str = "checkpoints"
 
