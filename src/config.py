@@ -39,8 +39,8 @@ class Config:
     dropout: float = 0.1
 
     # training
-    batch_size: int = 64
-    num_epochs: int = 20
+    batch_size: int = 32
+    num_epochs: int = 16
     lr: float = 1e-4
     checkpoint_dir: str = "checkpoints"
 
@@ -59,7 +59,7 @@ class Config:
 
     # experiment
     num_examples_for_samples: int = 10
-    train_subset_size: int = 100000  # e.g. 20000 for quick test
+    train_subset_size: int = 200000  # e.g. 20000 for quick test
     valid_subset_size: int = 2000
     test_subset_size: int = 2000
 
