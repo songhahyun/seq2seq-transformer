@@ -148,6 +148,7 @@ def run_wandb_experiment(args):
 
     print("[INFO] training start...")
     best_valid_loss = float("inf")
+    epochs_without_improvement = 0
 
     for epoch in range(config.num_epochs):
         train_loss = train_one_epoch(
@@ -191,8 +192,10 @@ def run_wandb_experiment(args):
             path=latest_checkpoint_path,
         )
 
-        if valid_loss < best_valid_loss:
+        improved = valid_loss < best_valid_loss - config.early_stopping_min_delta
+        if improved:
             best_valid_loss = valid_loss
+            epochs_without_improvement = 0
             best_checkpoint_path = f"{config.checkpoint_dir}/best.pt"
             save_checkpoint(
                 model=model,
@@ -207,6 +210,29 @@ def run_wandb_experiment(args):
             )
             wandb.run.summary["best_valid_loss"] = best_valid_loss
             wandb.run.summary["best_epoch"] = epoch + 1
+        else:
+            epochs_without_improvement += 1
+            print(
+                "[INFO] no validation improvement "
+                f"({epochs_without_improvement}/{config.early_stopping_patience})"
+            )
+            wandb.log(
+                {
+                    "early_stopping/epochs_without_improvement": epochs_without_improvement,
+                },
+                step=epoch + 1,
+            )
+
+            if epochs_without_improvement >= config.early_stopping_patience:
+                print(
+                    "[INFO] early stopping triggered: "
+                    f"best_valid_loss={best_valid_loss:.4f}"
+                )
+                wandb.run.summary["early_stopped"] = True
+                wandb.run.summary["stopped_epoch"] = epoch + 1
+                break
+    else:
+        wandb.run.summary["early_stopped"] = False
 
     print("[INFO] evaluating on test set...")
     source_texts, predictions, references = generate_predictions(

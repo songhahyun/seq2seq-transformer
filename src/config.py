@@ -33,15 +33,17 @@ class Config:
     # model
     d_model: int = 128 # 256
     nhead: int = 4 # 8
-    num_encoder_layers: int = 2 # 3
-    num_decoder_layers: int = 2 # 3
-    dim_feedforward: int = 256 # 512
+    num_encoder_layers: int = 3
+    num_decoder_layers: int = 3
+    dim_feedforward: int = 512
     dropout: float = 0.1
 
     # training
     batch_size: int = 32
-    num_epochs: int = 16
+    num_epochs: int = 40
     lr: float = 1e-4
+    early_stopping_patience: int = 5
+    early_stopping_min_delta: float = 0.001
     checkpoint_dir: str = "checkpoints"
 
     # decoding
