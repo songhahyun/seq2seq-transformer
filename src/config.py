@@ -40,7 +40,7 @@ class Config:
 
     # training
     batch_size: int = 32
-    num_epochs: int = 16
+    num_epochs: int = 40
     lr: float = 1e-4
     early_stopping_patience: int = 5
     early_stopping_min_delta: float = 0.001
