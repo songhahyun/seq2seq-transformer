@@ -1,4 +1,4 @@
-# Model Train and Evaluation: 학습 데이터 200K, batch size 32 조정 
+# Model Train and Evaluation: train data size, batch size 조정 
 
 ## 1. 모델 학습 결과
 
