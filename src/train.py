@@ -159,6 +159,7 @@ def run_train(config):
 
     print("[INFO] training start...")
     best_valid_loss = float("inf")
+    epochs_without_improvement = 0
     for epoch in range(config.num_epochs):
         train_loss = train_one_epoch(
             model, train_loader, optimizer, criterion, config.device
@@ -186,8 +187,10 @@ def run_train(config):
         )
         print(f"[INFO] saved checkpoint: {latest_checkpoint_path}")
 
-        if valid_loss < best_valid_loss:
+        improved = valid_loss < best_valid_loss - config.early_stopping_min_delta
+        if improved:
             best_valid_loss = valid_loss
+            epochs_without_improvement = 0
             best_checkpoint_path = f"{config.checkpoint_dir}/best.pt"
             save_checkpoint(
                 model=model,
@@ -201,3 +204,16 @@ def run_train(config):
                 path=best_checkpoint_path,
             )
             print(f"[INFO] saved best checkpoint: {best_checkpoint_path}")
+        else:
+            epochs_without_improvement += 1
+            print(
+                "[INFO] no validation improvement "
+                f"({epochs_without_improvement}/{config.early_stopping_patience})"
+            )
+
+            if epochs_without_improvement >= config.early_stopping_patience:
+                print(
+                    "[INFO] early stopping triggered: "
+                    f"best_valid_loss={best_valid_loss:.4f}"
+                )
+                break

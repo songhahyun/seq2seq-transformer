@@ -42,6 +42,8 @@ class Config:
     batch_size: int = 32
     num_epochs: int = 16
     lr: float = 1e-4
+    early_stopping_patience: int = 5
+    early_stopping_min_delta: float = 0.001
     checkpoint_dir: str = "checkpoints"
 
     # decoding
