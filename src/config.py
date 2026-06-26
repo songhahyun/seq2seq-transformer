@@ -33,9 +33,9 @@ class Config:
     # model
     d_model: int = 128 # 256
     nhead: int = 4 # 8
-    num_encoder_layers: int = 2 # 3
-    num_decoder_layers: int = 2 # 3
-    dim_feedforward: int = 256 # 512
+    num_encoder_layers: int = 3
+    num_decoder_layers: int = 3
+    dim_feedforward: int = 512
     dropout: float = 0.1
 
     # training
