@@ -40,7 +40,7 @@ class Config:
 
     # training
     batch_size: int = 32
-    num_epochs: int = 40
+    num_epochs: int = 60
     lr: float = 1e-4
     use_lr_scheduler: bool = True
     lr_scheduler_type: str = "linear"
@@ -65,7 +65,7 @@ class Config:
 
     # experiment
     num_examples_for_samples: int = 10
-    train_subset_size: int = 200000  # e.g. 20000 for quick test
+    train_subset_size: int = 500000  # e.g. 20000 for quick test
     valid_subset_size: int = 2000
     test_subset_size: int = 2000
 
