@@ -50,6 +50,12 @@ class Config:
     early_stopping_min_delta: float = 0.001
     checkpoint_dir: str = "checkpoints"
 
+    # dataloader
+    pretokenize_dataset: bool = True
+    num_workers: int = 2
+    pin_memory: bool = True
+    persistent_workers: bool = True
+
     # decoding
     max_decode_len: int = 128
     decode_strategy: str = "greedy"

@@ -129,6 +129,21 @@ def run_wandb_experiment(args):
         config,
     )
 
+    wandb.config.update(
+        {
+            "src_actual_vocab_size": sp_src.get_piece_size(),
+            "tgt_actual_vocab_size": sp_tgt.get_piece_size(),
+            "train_batches": len(train_loader),
+            "valid_batches": len(valid_loader),
+            "test_batches": len(test_loader),
+            "pretokenize_dataset": config.pretokenize_dataset,
+            "num_workers": config.num_workers,
+            "pin_memory": config.pin_memory,
+            "persistent_workers": config.persistent_workers,
+        },
+        allow_val_change=True,
+    )
+
     model = build_model(
         config=config,
         src_vocab_size=sp_src.get_piece_size(),
@@ -142,8 +157,6 @@ def run_wandb_experiment(args):
     wandb.watch(model, log=args.watch_log, log_freq=args.watch_log_freq)
     wandb.config.update(
         {
-            "src_actual_vocab_size": sp_src.get_piece_size(),
-            "tgt_actual_vocab_size": sp_tgt.get_piece_size(),
             "num_parameters": sum(p.numel() for p in model.parameters()),
             "total_training_steps": total_training_steps,
         },
