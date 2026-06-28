@@ -18,6 +18,7 @@ from src.metrics import compute_bleu, compute_chrf
 from src.model_utils import build_model
 from src.train import (
     create_loss_fn,
+    create_lr_scheduler,
     save_checkpoint,
     train_one_epoch,
     validate_one_epoch,
@@ -134,6 +135,8 @@ def run_wandb_experiment(args):
         tgt_vocab_size=sp_tgt.get_piece_size(),
     )
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
+    total_training_steps = len(train_loader) * config.num_epochs
+    scheduler = create_lr_scheduler(optimizer, config, total_training_steps)
     criterion = create_loss_fn(config.pad_id)
 
     wandb.watch(model, log=args.watch_log, log_freq=args.watch_log_freq)
@@ -142,9 +145,17 @@ def run_wandb_experiment(args):
             "src_actual_vocab_size": sp_src.get_piece_size(),
             "tgt_actual_vocab_size": sp_tgt.get_piece_size(),
             "num_parameters": sum(p.numel() for p in model.parameters()),
+            "total_training_steps": total_training_steps,
         },
         allow_val_change=True,
     )
+
+    if scheduler is not None:
+        print(
+            "[INFO] lr scheduler = "
+            f"{config.lr_scheduler_type} warmup_steps={config.warmup_steps} "
+            f"total_steps={total_training_steps}"
+        )
 
     print("[INFO] training start...")
     best_valid_loss = float("inf")
@@ -157,6 +168,7 @@ def run_wandb_experiment(args):
             optimizer,
             criterion,
             config.device,
+            scheduler=scheduler,
         )
         valid_loss = validate_one_epoch(
             model,
@@ -164,10 +176,12 @@ def run_wandb_experiment(args):
             criterion,
             config.device,
         )
+        current_lr = optimizer.param_groups[0]["lr"]
 
         print(
             f"[Epoch {epoch + 1}/{config.num_epochs}] "
-            f"train_loss={train_loss:.4f} | valid_loss={valid_loss:.4f}"
+            f"train_loss={train_loss:.4f} | valid_loss={valid_loss:.4f} | "
+            f"lr={current_lr:.8f}"
         )
 
         wandb.log(
@@ -175,6 +189,7 @@ def run_wandb_experiment(args):
                 "epoch": epoch + 1,
                 "train/loss": train_loss,
                 "valid/loss": valid_loss,
+                "train/lr": current_lr,
             },
             step=epoch + 1,
         )
@@ -190,6 +205,7 @@ def run_wandb_experiment(args):
             src_vocab_size=sp_src.get_piece_size(),
             tgt_vocab_size=sp_tgt.get_piece_size(),
             path=latest_checkpoint_path,
+            scheduler=scheduler,
         )
 
         improved = valid_loss < best_valid_loss - config.early_stopping_min_delta
@@ -207,6 +223,7 @@ def run_wandb_experiment(args):
                 src_vocab_size=sp_src.get_piece_size(),
                 tgt_vocab_size=sp_tgt.get_piece_size(),
                 path=best_checkpoint_path,
+                scheduler=scheduler,
             )
             wandb.run.summary["best_valid_loss"] = best_valid_loss
             wandb.run.summary["best_epoch"] = epoch + 1

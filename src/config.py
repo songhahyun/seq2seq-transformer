@@ -42,6 +42,10 @@ class Config:
     batch_size: int = 32
     num_epochs: int = 40
     lr: float = 1e-4
+    use_lr_scheduler: bool = True
+    lr_scheduler_type: str = "linear"
+    warmup_steps: int = 4000
+    min_lr_ratio: float = 0.0
     early_stopping_patience: int = 5
     early_stopping_min_delta: float = 0.001
     checkpoint_dir: str = "checkpoints"
