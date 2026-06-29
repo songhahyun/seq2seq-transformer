@@ -1,4 +1,4 @@
-# Model Train and Evaluation: 모델 구조 변경
+# Model Train and Evaluation: v0.4 실험
 
 ## 1. 모델 학습 결과
 
