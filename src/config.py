@@ -31,8 +31,8 @@ class Config:
     max_length: int = 128
 
     # model
-    d_model: int = 128 # 256
-    nhead: int = 4 # 8
+    d_model: int = 256
+    nhead: int = 8
     num_encoder_layers: int = 3
     num_decoder_layers: int = 3
     dim_feedforward: int = 512
@@ -45,7 +45,7 @@ class Config:
     use_lr_scheduler: bool = True
     lr_scheduler_type: str = "linear"
     warmup_steps: int = 4000
-    min_lr_ratio: float = 0.0
+    min_lr_ratio: float = 0.5
     early_stopping_patience: int = 5
     early_stopping_min_delta: float = 0.001
     checkpoint_dir: str = "checkpoints"
