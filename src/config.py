@@ -52,7 +52,7 @@ class Config:
 
     # dataloader
     pretokenize_dataset: bool = True
-    num_workers: int = 2
+    num_workers: int = 4
     pin_memory: bool = True
     persistent_workers: bool = True
 
