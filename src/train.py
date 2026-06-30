@@ -3,6 +3,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim.lr_scheduler import LambdaLR
 
 from src.data_pipeline import (
     create_dataloaders,
@@ -20,6 +21,32 @@ def create_loss_fn(pad_id: int):
     return nn.CrossEntropyLoss(ignore_index=pad_id)
 
 
+def create_lr_scheduler(optimizer, config, total_training_steps: int):
+    """Create a linear warmup and linear decay learning-rate scheduler."""
+    if not config.use_lr_scheduler:
+        return None
+
+    if config.lr_scheduler_type != "linear":
+        raise ValueError(f"unsupported lr_scheduler_type: {config.lr_scheduler_type}")
+
+    if total_training_steps <= 0:
+        raise ValueError("total_training_steps must be greater than 0")
+
+    warmup_steps = min(config.warmup_steps, total_training_steps)
+    min_lr_ratio = config.min_lr_ratio
+
+    def lr_lambda(current_step: int):
+        if warmup_steps > 0 and current_step < warmup_steps:
+            return float(current_step + 1) / float(warmup_steps)
+
+        decay_steps = max(total_training_steps - warmup_steps, 1)
+        steps_after_warmup = min(max(current_step - warmup_steps, 0), decay_steps)
+        decay_ratio = 1.0 - (steps_after_warmup / decay_steps)
+        return max(min_lr_ratio, decay_ratio)
+
+    return LambdaLR(optimizer, lr_lambda=lr_lambda)
+
+
 def save_checkpoint(
     model,
     optimizer,
@@ -30,6 +57,7 @@ def save_checkpoint(
     src_vocab_size: int,
     tgt_vocab_size: int,
     path: str,
+    scheduler=None,
 ):
     """Save model, optimizer, metrics, vocabulary sizes, and config state."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -48,6 +76,8 @@ def save_checkpoint(
         "tgt_vocab_size": tgt_vocab_size,
         "config": config_state,
     }
+    if scheduler is not None:
+        checkpoint["scheduler_state_dict"] = scheduler.state_dict()
     torch.save(checkpoint, path)
 
 
@@ -59,15 +89,15 @@ def shift_tgt_for_teacher_forcing(tgt_ids):
     return tgt_input, tgt_output
 
 
-def train_one_epoch(model, dataloader, optimizer, criterion, device):
+def train_one_epoch(model, dataloader, optimizer, criterion, device, scheduler=None):
     """Train the model for one epoch and return average batch loss."""
     model.train()
     total_loss = 0.0
     total_batches = 0
 
     for batch in dataloader:
-        src_ids = batch["src_ids"].to(device)
-        tgt_ids = batch["tgt_ids"].to(device)
+        src_ids = batch["src_ids"].to(device, non_blocking=True)
+        tgt_ids = batch["tgt_ids"].to(device, non_blocking=True)
 
         tgt_input, tgt_output = shift_tgt_for_teacher_forcing(tgt_ids)
 
@@ -81,6 +111,8 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device):
 
         loss.backward()
         optimizer.step()
+        if scheduler is not None:
+            scheduler.step()
 
         total_loss += loss.item()
         total_batches += 1
@@ -96,8 +128,8 @@ def validate_one_epoch(model, dataloader, criterion, device):
     total_batches = 0
 
     for batch in dataloader:
-        src_ids = batch["src_ids"].to(device)
-        tgt_ids = batch["tgt_ids"].to(device)
+        src_ids = batch["src_ids"].to(device, non_blocking=True)
+        tgt_ids = batch["tgt_ids"].to(device, non_blocking=True)
 
         tgt_input, tgt_output = shift_tgt_for_teacher_forcing(tgt_ids)
 
@@ -155,22 +187,33 @@ def run_train(config):
     )
 
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
+    total_training_steps = len(train_loader) * config.num_epochs
+    scheduler = create_lr_scheduler(optimizer, config, total_training_steps)
     criterion = create_loss_fn(config.pad_id)
+
+    if scheduler is not None:
+        print(
+            "[INFO] lr scheduler = "
+            f"{config.lr_scheduler_type} warmup_steps={config.warmup_steps} "
+            f"total_steps={total_training_steps}"
+        )
 
     print("[INFO] training start...")
     best_valid_loss = float("inf")
     epochs_without_improvement = 0
     for epoch in range(config.num_epochs):
         train_loss = train_one_epoch(
-            model, train_loader, optimizer, criterion, config.device
+            model, train_loader, optimizer, criterion, config.device, scheduler=scheduler
         )
         valid_loss = validate_one_epoch(
             model, valid_loader, criterion, config.device
         )
+        current_lr = optimizer.param_groups[0]["lr"]
 
         print(
             f"[Epoch {epoch+1}/{config.num_epochs}] "
-            f"train_loss={train_loss:.4f} | valid_loss={valid_loss:.4f}"
+            f"train_loss={train_loss:.4f} | valid_loss={valid_loss:.4f} | "
+            f"lr={current_lr:.8f}"
         )
 
         latest_checkpoint_path = f"{config.checkpoint_dir}/latest.pt"
@@ -184,6 +227,7 @@ def run_train(config):
             src_vocab_size=sp_src.get_piece_size(),
             tgt_vocab_size=sp_tgt.get_piece_size(),
             path=latest_checkpoint_path,
+            scheduler=scheduler,
         )
         print(f"[INFO] saved checkpoint: {latest_checkpoint_path}")
 
@@ -202,6 +246,7 @@ def run_train(config):
                 src_vocab_size=sp_src.get_piece_size(),
                 tgt_vocab_size=sp_tgt.get_piece_size(),
                 path=best_checkpoint_path,
+                scheduler=scheduler,
             )
             print(f"[INFO] saved best checkpoint: {best_checkpoint_path}")
         else:

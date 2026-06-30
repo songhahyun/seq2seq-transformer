@@ -1,6 +1,7 @@
 import os
 import random
 import tempfile
+from functools import partial
 from typing import List, Tuple
 
 import torch
@@ -156,33 +157,41 @@ class TranslationDataset(Dataset):
     """PyTorch dataset that stores translation pairs and encoded token sequences."""
 
     def __init__(self, pairs, sp_src, sp_tgt, config):
-        """Store translation pairs and tokenizer/config references."""
-        self.pairs = pairs
-        self.sp_src = sp_src
-        self.sp_tgt = sp_tgt
-        self.config = config
+        """Store translation pairs, optionally pre-tokenized in memory."""
+        self.pretokenize = getattr(config, "pretokenize_dataset", True)
 
-    def __len__(self):
-        """Return the number of translation pairs in the dataset."""
-        return len(self.pairs)
+        if self.pretokenize:
+            self.examples = [
+                self._encode_pair(src_text, tgt_text, sp_src, sp_tgt, config)
+                for src_text, tgt_text in pairs
+            ]
+            self.pairs = None
+            self.sp_src = None
+            self.sp_tgt = None
+            self.config = None
+        else:
+            self.examples = None
+            self.pairs = pairs
+            self.sp_src = sp_src
+            self.sp_tgt = sp_tgt
+            self.config = config
 
-    def __getitem__(self, idx):
-        """Encode one source-target pair and return text plus token ids."""
-        src_text, tgt_text = self.pairs[idx]
-
+    @staticmethod
+    def _encode_pair(src_text, tgt_text, sp_src, sp_tgt, config):
+        """Encode one source-target pair and keep the original text."""
         src_ids = encode_text(
-            self.sp_src,
+            sp_src,
             src_text,
-            self.config.max_length,
-            self.config.bos_id,
-            self.config.eos_id,
+            config.max_length,
+            config.bos_id,
+            config.eos_id,
         )
         tgt_ids = encode_text(
-            self.sp_tgt,
+            sp_tgt,
             tgt_text,
-            self.config.max_length,
-            self.config.bos_id,
-            self.config.eos_id,
+            config.max_length,
+            config.bos_id,
+            config.eos_id,
         )
 
         return {
@@ -191,6 +200,20 @@ class TranslationDataset(Dataset):
             "src_ids": src_ids,
             "tgt_ids": tgt_ids,
         }
+
+    def __len__(self):
+        """Return the number of translation pairs in the dataset."""
+        if self.examples is not None:
+            return len(self.examples)
+        return len(self.pairs)
+
+    def __getitem__(self, idx):
+        """Encode one source-target pair and return text plus token ids."""
+        if self.examples is not None:
+            return self.examples[idx]
+
+        src_text, tgt_text = self.pairs[idx]
+        return self._encode_pair(src_text, tgt_text, self.sp_src, self.sp_tgt, self.config)
 
 
 def pad_sequence(sequence, max_len, pad_id):
@@ -233,23 +256,32 @@ def create_dataloaders(train_pairs, valid_pairs, test_pairs, sp_src, sp_tgt, con
     valid_dataset = TranslationDataset(valid_pairs, sp_src, sp_tgt, config)
     test_dataset = TranslationDataset(test_pairs, sp_src, sp_tgt, config)
 
+    num_workers = getattr(config, "num_workers", 0)
+    pin_memory = bool(getattr(config, "pin_memory", False))
+    persistent_workers = bool(getattr(config, "persistent_workers", False)) and num_workers > 0
+    dataloader_kwargs = {
+        "batch_size": config.batch_size,
+        "collate_fn": partial(collate_fn, pad_id=config.pad_id),
+        "num_workers": num_workers,
+        "pin_memory": pin_memory,
+    }
+    if num_workers > 0:
+        dataloader_kwargs["persistent_workers"] = persistent_workers
+
     train_loader = DataLoader(
         train_dataset,
-        batch_size=config.batch_size,
         shuffle=True,
-        collate_fn=lambda batch: collate_fn(batch, config.pad_id),
+        **dataloader_kwargs,
     )
     valid_loader = DataLoader(
         valid_dataset,
-        batch_size=config.batch_size,
         shuffle=False,
-        collate_fn=lambda batch: collate_fn(batch, config.pad_id),
+        **dataloader_kwargs,
     )
     test_loader = DataLoader(
         test_dataset,
-        batch_size=config.batch_size,
         shuffle=False,
-        collate_fn=lambda batch: collate_fn(batch, config.pad_id),
+        **dataloader_kwargs,
     )
 
     return train_loader, valid_loader, test_loader

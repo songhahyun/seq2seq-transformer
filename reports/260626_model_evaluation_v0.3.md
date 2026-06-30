@@ -1,4 +1,4 @@
-# Model Train and Evaluation: train data size, batch size 조정 
+# Model Train and Evaluation: v0.3 실험 
 
 ## 1. 모델 학습 결과
 

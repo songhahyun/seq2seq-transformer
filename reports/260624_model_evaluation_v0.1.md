@@ -1,4 +1,4 @@
-# Model Train and Evaluation: 초기 실험
+# Model Train and Evaluation: v0.1 실험
 
 ## 실험 결과 요약
 
