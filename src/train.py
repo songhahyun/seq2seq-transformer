@@ -96,8 +96,8 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device, scheduler=N
     total_batches = 0
 
     for batch in dataloader:
-        src_ids = batch["src_ids"].to(device)
-        tgt_ids = batch["tgt_ids"].to(device)
+        src_ids = batch["src_ids"].to(device, non_blocking=True)
+        tgt_ids = batch["tgt_ids"].to(device, non_blocking=True)
 
         tgt_input, tgt_output = shift_tgt_for_teacher_forcing(tgt_ids)
 
@@ -128,8 +128,8 @@ def validate_one_epoch(model, dataloader, criterion, device):
     total_batches = 0
 
     for batch in dataloader:
-        src_ids = batch["src_ids"].to(device)
-        tgt_ids = batch["tgt_ids"].to(device)
+        src_ids = batch["src_ids"].to(device, non_blocking=True)
+        tgt_ids = batch["tgt_ids"].to(device, non_blocking=True)
 
         tgt_input, tgt_output = shift_tgt_for_teacher_forcing(tgt_ids)
 
